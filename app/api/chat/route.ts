@@ -139,7 +139,26 @@ export async function POST(req: NextRequest) {
 
     const { message, productContext } = parsed.data;
 
-    // Check if an external OpenAI API key is configured
+    // 1. Google Gemini 3.5 Flash (Primary AI Engine)
+    try {
+      const { callGemini } = await import("@/lib/gemini");
+      const promptWithContext = productContext
+        ? `[Active Product Context: ${JSON.stringify(productContext)}]\n\nUser Question: ${message}`
+        : message;
+
+      const geminiReply = await callGemini(promptWithContext, SYSTEM_PROMPT);
+      if (geminiReply && geminiReply.length > 0) {
+        return NextResponse.json({
+          reply: geminiReply,
+          source: "gemini_flash",
+          creditsUsed: 1,
+        });
+      }
+    } catch (geminiErr: any) {
+      console.warn("Gemini chat fallback:", geminiErr.message);
+    }
+
+    // 2. OpenAI Fallback (if configured)
     if (process.env.OPENAI_API_KEY) {
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -183,7 +202,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // High performance built-in reasoning engine
+    // 3. High performance built-in reasoning engine
     const answer = generateEcommerceAnswer(message, productContext);
 
     return NextResponse.json({

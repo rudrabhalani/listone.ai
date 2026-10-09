@@ -86,7 +86,45 @@ export async function POST(req: NextRequest) {
 
     const inputData = parsed.data;
 
-    // Check if external OpenAI key is present
+    // 1. Google Gemini 3.5 Flash (Primary AI Engine)
+    try {
+      const { generateEcommerceCopy } = await import("@/lib/gemini");
+      const geminiResult = await generateEcommerceCopy(
+        inputData.productName,
+        inputData.category,
+        inputData.keyFeatures || []
+      );
+
+      if (geminiResult && geminiResult.title) {
+        const bulletsFormatted = (geminiResult.bulletPoints || []).map((b: string, i: number) => {
+          const parts = b.split(":");
+          const header = parts.length > 1 ? parts[0].trim() : `BENEFIT ${i + 1}`;
+          const body = parts.length > 1 ? parts.slice(1).join(":").trim() : b.trim();
+          return {
+            id: `b${i + 1}`,
+            header,
+            body,
+            charCount: (header + ": " + body).length,
+          };
+        });
+
+        const searchTerms = geminiResult.searchTerms || "premium authentic durable professional";
+        return NextResponse.json({
+          title: geminiResult.title,
+          titleChars: geminiResult.title.length,
+          bullets: bulletsFormatted,
+          description: geminiResult.description,
+          searchTerms,
+          searchTermsBytes: new TextEncoder().encode(searchTerms).length,
+          creditsUsed: 5,
+          source: "gemini_flash",
+        });
+      }
+    } catch (geminiErr: any) {
+      console.warn("Gemini listing copy fallback:", geminiErr.message);
+    }
+
+    // 2. Check if external OpenAI key is present
     if (process.env.OPENAI_API_KEY) {
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
