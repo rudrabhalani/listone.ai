@@ -4,16 +4,7 @@
  */
 
 function getGeminiApiKey(): string {
-  if (process.env.GEMINI_API_KEY) {
-    return process.env.GEMINI_API_KEY;
-  }
-  // Safe runtime fallback
-  try {
-    const encoded = "QVEuQWI4Uk42SVZCUFZkaVBkYUY2a2pDWEpTb01JWkhrREJoaEVKYXFiUXFob19wcmYyakE=";
-    return Buffer.from(encoded, "base64").toString("utf-8");
-  } catch {
-    return "";
-  }
+  return process.env.GEMINI_API_KEY || "";
 }
 
 export async function callGemini(
