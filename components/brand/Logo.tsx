@@ -34,11 +34,12 @@ export const LogoIcon: React.FC<{
       style={{
         filter:
           theme === "gradient"
-            ? "drop-shadow(0px 4px 12px rgba(124, 58, 237, 0.35))"
+            ? "drop-shadow(0px 4px 14px rgba(37, 99, 235, 0.35))"
             : undefined,
       }}
     >
       <defs>
+        {/* Executive Professional Gradient: Royal Sapphire & Electric Cobalt */}
         <linearGradient
           id={gradientId}
           x1="0"
@@ -47,9 +48,9 @@ export const LogoIcon: React.FC<{
           y2="64"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#4F46E5" />
-          <stop offset="55%" stopColor="#7C3AED" />
-          <stop offset="100%" stopColor="#EC4899" />
+          <stop offset="0%" stopColor="#1E40AF" />
+          <stop offset="45%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#4F46E5" />
         </linearGradient>
       </defs>
 
@@ -67,14 +68,14 @@ export const LogoIcon: React.FC<{
         }
       />
 
-      {/* Subtle inner highlight border */}
+      {/* Subtle inner highlight border for depth */}
       <rect
         x="1"
         y="1"
         width="62"
         height="62"
         rx="15"
-        stroke="rgba(255, 255, 255, 0.25)"
+        stroke="rgba(255, 255, 255, 0.3)"
         strokeWidth="1.5"
         fill="none"
       />
@@ -82,7 +83,7 @@ export const LogoIcon: React.FC<{
       {/* L stroke: starts top-left, goes down, turns right */}
       <path
         d="M16 16 V47 H34"
-        stroke={theme === "white" ? "#4F46E5" : "#FFFFFF"}
+        stroke={theme === "white" ? "#2563EB" : "#FFFFFF"}
         strokeWidth="6"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -91,7 +92,7 @@ export const LogoIcon: React.FC<{
       {/* 1 stroke: diagonal serif into vertical stem */}
       <path
         d="M42 25 L48 17 V47"
-        stroke={theme === "white" ? "#4F46E5" : "#FFFFFF"}
+        stroke={theme === "white" ? "#2563EB" : "#FFFFFF"}
         strokeWidth="6"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -146,7 +147,7 @@ export const Logo: React.FC<LogoProps> = ({
           )}
         >
           <span>Listone</span>
-          <span className="bg-gradient-to-r from-brand-indigo via-brand-violet to-brand-pink bg-clip-text text-transparent ml-0.5">
+          <span className="bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent ml-0.5 font-black">
             .ai
           </span>
         </span>
@@ -158,7 +159,7 @@ export const Logo: React.FC<LogoProps> = ({
     return (
       <Link
         href={href}
-        className="inline-flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-violet rounded-lg"
+        className="inline-flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
       >
         {content}
       </Link>

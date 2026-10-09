@@ -22,7 +22,7 @@ export const siteConfig = {
     { label: "Features", href: "#features" },
     { label: "How it Works", href: "#how-it-works" },
     { label: "Examples", href: "#examples" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Subscription", href: "/dashboard/billing" },
     { label: "Founder", href: "#founder" },
     { label: "Resources", href: "#faq" },
     { label: "About", href: "/about" },
