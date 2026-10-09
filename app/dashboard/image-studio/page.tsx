@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApp, LayerObject } from "@/lib/store";
+import { useApp, LayerObject, GeneratedImageItem } from "@/lib/store";
+import { ListingShotVisual } from "@/components/dashboard/ListingShotVisual";
 import { removeBackgroundClient } from "@/lib/image-cutout";
+import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import {
   Upload,
@@ -14,59 +16,32 @@ import {
   Crown,
   Type,
   Award,
-  Maximize2,
-  Trash2,
+  Layers,
   Copy,
   Check,
   X,
   Send,
-  Move,
-  Layers,
-  ArrowRight,
-  Eye,
+  Trash2,
+  Maximize2,
   RotateCcw,
 } from "lucide-react";
 
-type ShotType = "lifestyle" | "how_to_use" | "overview_size" | "macro_detail" | "white_hero";
-
-interface ShotOption {
-  id: ShotType;
-  label: string;
-  icon: string;
-  desc: string;
-}
-
-const SHOT_OPTIONS: ShotOption[] = [
-  {
-    id: "lifestyle",
-    label: "Where to Use (Lifestyle)",
-    icon: "🌟",
-    desc: "In-home ambient scene showing where & how product is used",
-  },
-  {
-    id: "how_to_use",
-    label: "How to Use & Action",
-    icon: "🛠️",
-    desc: "Hands operating, assembling or installing in real action",
-  },
-  {
-    id: "overview_size",
-    label: "Product Overview & Size",
-    icon: "📏",
-    desc: "Dimensional overview with realistic scale & clean studio light",
-  },
-  {
-    id: "macro_detail",
-    label: "Macro Texture Detail",
-    icon: "🔍",
-    desc: "Extreme close-up on materials, micro-pores & craftsmanship",
-  },
-  {
-    id: "white_hero",
-    label: "Amazon Pure White Hero",
-    icon: "🧼",
-    desc: "100% Solid White RGB(255) Amazon main listing compliant",
-  },
+const SHOT_TITLES = [
+  "1. Amazon Main Hero (100% Pure White)",
+  "2. Where to Use • In-Home Ambient Context",
+  "3. How to Use • 3-Step Setup Progression",
+  "4. Circular 10x Optical Texture Loupe",
+  "5. Accurate Scale & Dimensional Blueprint",
+  "6. What's in the Box • Complete Set",
+  "7. Dynamic 45° Angle Studio Showcase",
+  "8. Head-to-Head Comparison Matrix",
+  "9. Ergonomic Human Grip & Handheld Fit",
+  "10. Before & After • Problem Resolved",
+  "11. Multi-Angle Architecture & 360° Profile",
+  "12. Extreme Durability Lab Tested",
+  "13. Official Quality & Safety Certifications",
+  "14. Core Commercial Benefits Banner",
+  "15. 30-Day Money-Back Guarantee Shield",
 ];
 
 function ImageStudioContent() {
@@ -76,25 +51,23 @@ function ImageStudioContent() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const canvasStageRef = useRef<HTMLDivElement>(null);
 
-  // Uploaded photo state
-  const [uploadedPhotoUrl, setUploadedPhotoUrl] = useState<string | null>(null);
+  // User uploaded photo state (NO default fake images)
+  const [customPhotoUrl, setCustomPhotoUrl] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
-  const [productAnalysis, setProductAnalysis] = useState("");
-
-  // Single focused image generation
-  const [selectedShotType, setSelectedShotType] = useState<ShotType>("lifestyle");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState("");
-  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 
-  // Canva-style layer editing state
-  const [layers, setLayers] = useState<LayerObject[]>([]);
+  // 15 Listing Images state
+  const [shots, setShots] = useState<GeneratedImageItem[]>([]);
+
+  // Canva Studio Modal state
+  const [activeEditingShot, setActiveEditingShot] = useState<GeneratedImageItem | null>(null);
+  const [canvaLayers, setCanvaLayers] = useState<LayerObject[]>([]);
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
   const [inlineEditingId, setInlineEditingId] = useState<string | null>(null);
 
-  // Dragging state
+  // Canva Dragging & Resizing (Pointer events for desktop + mobile)
   const [dragState, setDragState] = useState<{
     isDragging: boolean;
     layerId: string | null;
@@ -111,7 +84,6 @@ function ImageStudioContent() {
     initialY: 0,
   });
 
-  // Resizing state
   const [resizeState, setResizeState] = useState<{
     isResizing: boolean;
     layerId: string | null;
@@ -128,13 +100,56 @@ function ImageStudioContent() {
     initialHeight: 0,
   });
 
-  // Ask Bar state (Starts completely empty)
+  // Ask Bar State (Empty input by default)
   const [askQuery, setAskQuery] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [aiAnswer, setAiAnswer] = useState<string | null>(null);
   const [copiedAnswer, setCopiedAnswer] = useState(false);
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
 
-  // Handle ASIN URL query parameter
+  // Build the complete set of 15 high-converting listing shots
+  const build15Shots = (imgUrl: string, pName: string) => {
+    return Array.from({ length: 15 }).map((_, idx) => {
+      const shotIndex = idx + 1;
+      return {
+        id: `shot-${shotIndex}-${Date.now()}`,
+        shotIndex,
+        shotType: `shot_${shotIndex}`,
+        title: SHOT_TITLES[idx] || `Listing Shot #${shotIndex}`,
+        description: `Professional Amazon Listing Visual #${shotIndex}`,
+        previewUrl: imgUrl,
+        status: "ready" as const,
+        layers: [
+          {
+            id: `bg-${shotIndex}`,
+            type: "background" as const,
+            name: "Canvas Background",
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 800,
+            fill: "#FFFFFF",
+            locked: true,
+            visible: true,
+          },
+          {
+            id: `product-${shotIndex}`,
+            type: "product" as const,
+            name: "Product Cutout",
+            imageUrl: imgUrl,
+            x: 120,
+            y: 120,
+            width: 560,
+            height: 560,
+            locked: false,
+            visible: true,
+          },
+        ],
+      };
+    });
+  };
+
+  // Handle ASIN URL query parameter if present
   useEffect(() => {
     const asinParam = searchParams.get("asin");
     if (asinParam) {
@@ -157,21 +172,22 @@ function ImageStudioContent() {
         const title = json.data.title || "Product";
         setProductName(title);
         if (json.data.imageUrl) {
-          setUploadedPhotoUrl(json.data.imageUrl);
-          generateSingleImage(json.data.imageUrl, title, selectedShotType);
+          setCustomPhotoUrl(json.data.imageUrl);
+          setShots(build15Shots(json.data.imageUrl, title));
         }
       }
     } catch {
       // Fallback
     } finally {
       setIsGenerating(false);
+      setGenerationStep("");
     }
   };
 
-  // Process uploaded or clicked user photo
+  // Process uploaded or camera-clicked photo
   const processUploadedFile = async (file: File) => {
     setIsGenerating(true);
-    setGenerationStep("Reading image & removing background...");
+    setGenerationStep("Analyzing photo & removing background...");
     const reader = new FileReader();
     reader.onload = async (event) => {
       const rawDataUrl = event.target?.result as string;
@@ -179,12 +195,17 @@ function ImageStudioContent() {
       const activeName = cleanName || "Product";
       setProductName(activeName);
 
-      // Clean background removal
+      // Background cutout
       const cutoutUrl = await removeBackgroundClient(rawDataUrl);
-      setUploadedPhotoUrl(cutoutUrl);
+      setCustomPhotoUrl(cutoutUrl);
 
-      // Immediately generate the single high-quality focused image
-      await generateSingleImage(rawDataUrl, activeName, selectedShotType);
+      setGenerationStep("Generating 15 commercial listing shots...");
+      setTimeout(() => {
+        setShots(build15Shots(cutoutUrl, activeName));
+        setIsGenerating(false);
+        setGenerationStep("");
+        deductCredits(1);
+      }, 600);
     };
     reader.readAsDataURL(file);
   };
@@ -196,72 +217,14 @@ function ImageStudioContent() {
     }
   };
 
-  // Generate ONE single, high-quality image using Gemini 3.5 Flash vision + FLUX
-  const generateSingleImage = async (
-    imgBase64: string,
-    pName: string,
-    shotType: ShotType,
-    customUserPrompt?: string
-  ) => {
-    setIsGenerating(true);
-    setGenerationStep("Analyzing product with Gemini 3.5 Flash...");
-
-    try {
-      const res = await fetch("/api/generate-single-image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageBase64: imgBase64,
-          shotType,
-          customPrompt: customUserPrompt,
-          productName: pName,
-        }),
-      });
-
-      setGenerationStep("Synthesizing realistic listing image...");
-      const data = await res.json();
-
-      if (data.success && data.imageUrl) {
-        setGeneratedImageUrl(data.imageUrl);
-        if (data.productAnalysis) {
-          setProductAnalysis(data.productAnalysis);
-        }
-
-        // Initialize Canva layers on top of this generated image
-        setLayers([
-          {
-            id: "layer-bg",
-            type: "background",
-            name: "Generated Image Background",
-            x: 0,
-            y: 0,
-            width: 800,
-            height: 800,
-            imageUrl: data.imageUrl,
-            locked: true,
-            visible: true,
-          },
-        ]);
-        setSelectedLayerId(null);
-        deductCredits(1);
-      }
-    } catch (err: any) {
-      console.error("Single image generation error:", err.message);
-    } finally {
-      setIsGenerating(false);
-      setGenerationStep("");
-    }
-  };
-
-  // Pointer drag & resize listeners on window for fluid Canva-like control (Desktop + Mobile)
+  // Pointer drag & resize listeners for fluid Canva control (Desktop + Mobile)
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      // 1. Dragging
       if (dragState.isDragging && dragState.layerId) {
         const dx = (e.clientX - dragState.startX) * (800 / 600);
         const dy = (e.clientY - dragState.startY) * (800 / 600);
 
-        setLayers((prev) =>
+        setCanvaLayers((prev) =>
           prev.map((l) =>
             l.id === dragState.layerId
               ? {
@@ -274,12 +237,11 @@ function ImageStudioContent() {
         );
       }
 
-      // 2. Resizing
       if (resizeState.isResizing && resizeState.layerId) {
         const dx = (e.clientX - resizeState.startX) * (800 / 600);
         const dy = (e.clientY - resizeState.startY) * (800 / 600);
 
-        setLayers((prev) =>
+        setCanvaLayers((prev) =>
           prev.map((l) =>
             l.id === resizeState.layerId
               ? {
@@ -310,102 +272,212 @@ function ImageStudioContent() {
     };
   }, [dragState, resizeState]);
 
-  // Canva Layer operations (Pointer events work on touch and mouse)
-  const handleLayerPointerDown = (e: React.PointerEvent, layer: LayerObject) => {
-    if (layer.locked) return;
-    e.stopPropagation();
-    setSelectedLayerId(layer.id);
-    setDragState({
-      isDragging: true,
-      layerId: layer.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      initialX: layer.x,
-      initialY: layer.y,
-    });
+  // Open shot in Canva Studio modal
+  const handleOpenCanvaModal = (shot: GeneratedImageItem) => {
+    setActiveEditingShot(shot);
+    setCanvaLayers([
+      {
+        id: "layer-bg",
+        type: "background",
+        name: "Background",
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 800,
+        fill: "#FFFFFF",
+        locked: true,
+        visible: true,
+      },
+      {
+        id: "layer-product",
+        type: "product",
+        name: "Product",
+        imageUrl: customPhotoUrl || "",
+        x: 150,
+        y: 150,
+        width: 500,
+        height: 500,
+        locked: false,
+        visible: true,
+      },
+    ]);
+    setSelectedLayerId("layer-product");
   };
 
-  const handleResizePointerDown = (e: React.PointerEvent, layer: LayerObject) => {
-    e.stopPropagation();
-    setResizeState({
-      isResizing: true,
-      layerId: layer.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      initialWidth: layer.width,
-      initialHeight: layer.height,
-    });
-  };
-
-  const handleAddText = (type: "headline" | "subtitle") => {
+  // Add text & badges in Canva modal
+  const handleAddCanvaText = (type: "headline" | "subtitle") => {
     const newId = `text-${Date.now()}`;
     const newLayer: LayerObject = {
       id: newId,
       type: "text",
       name: type === "headline" ? "Headline Banner" : "Callout Text",
       x: 60,
-      y: type === "headline" ? 50 : 120,
+      y: type === "headline" ? 40 : 100,
       width: 680,
-      height: type === "headline" ? 60 : 40,
+      height: type === "headline" ? 50 : 35,
       text: type === "headline" ? "HIGH-PERFORMANCE PRECISION DESIGN" : "Engineered for maximum daily durability",
-      fontSize: type === "headline" ? 28 : 18,
+      fontSize: type === "headline" ? 26 : 18,
       fontWeight: type === "headline" ? "800" : "600",
-      fill: "#FFFFFF",
+      fill: "#1E3A8A",
       locked: false,
       visible: true,
       opacity: 1,
     };
-    setLayers((prev) => [...prev, newLayer]);
+    setCanvaLayers((prev) => [...prev, newLayer]);
     setSelectedLayerId(newId);
   };
 
-  const handleAddBadge = (text: string, fill = "#1E40AF") => {
+  const handleAddCanvaBadge = (text: string, fill = "#1E40AF") => {
     const newId = `badge-${Date.now()}`;
     const newLayer: LayerObject = {
       id: newId,
       type: "badge",
       name: `Badge: ${text}`,
       x: 60,
-      y: 700,
-      width: 260,
-      height: 48,
+      y: 710,
+      width: 250,
+      height: 44,
       text,
       fill,
       locked: false,
       visible: true,
       opacity: 1,
     };
-    setLayers((prev) => [...prev, newLayer]);
+    setCanvaLayers((prev) => [...prev, newLayer]);
     setSelectedLayerId(newId);
   };
 
-  const handleAddProductOverlay = () => {
-    if (!uploadedPhotoUrl) return;
-    const newId = `product-overlay-${Date.now()}`;
-    const newLayer: LayerObject = {
-      id: newId,
-      type: "product",
-      name: "Original Product Cutout",
-      imageUrl: uploadedPhotoUrl,
-      x: 150,
-      y: 150,
-      width: 500,
-      height: 500,
-      locked: false,
-      visible: true,
-      opacity: 1,
+  // Export 2000x2000 HD from Canva modal
+  const handleExportCanvaHd = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 2000;
+    canvas.height = 2000;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, 2000, 2000);
+
+    const scale = 2000 / 800;
+
+    const finalize = () => {
+      canvaLayers.forEach((l) => {
+        if (!l.visible || l.type === "background") return;
+
+        if (l.type === "badge" && l.text) {
+          ctx.fillStyle = l.fill || "#1E40AF";
+          ctx.beginPath();
+          ctx.roundRect(l.x * scale, l.y * scale, l.width * scale, l.height * scale, 22 * scale);
+          ctx.fill();
+          ctx.fillStyle = "#FFFFFF";
+          ctx.font = `bold ${16 * scale}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(l.text, (l.x + l.width / 2) * scale, (l.y + l.height / 2) * scale);
+        } else if (l.type === "text" && l.text) {
+          ctx.fillStyle = l.fill || "#1E3A8A";
+          ctx.font = `${l.fontWeight || "800"} ${(l.fontSize || 24) * scale}px sans-serif`;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "top";
+          ctx.fillText(l.text, l.x * scale, l.y * scale);
+        }
+      });
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          saveAs(blob, `${(productName || "Product").replace(/\s+/g, "_")}_Shot_${activeEditingShot?.shotIndex || 1}_2000x2000.png`);
+        }
+      }, "image/png");
     };
-    setLayers((prev) => [...prev, newLayer]);
-    setSelectedLayerId(newId);
+
+    const prodLayer = canvaLayers.find((l) => l.type === "product" && l.imageUrl);
+    if (prodLayer?.imageUrl) {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, prodLayer.x * scale, prodLayer.y * scale, prodLayer.width * scale, prodLayer.height * scale);
+        finalize();
+      };
+      img.onerror = () => finalize();
+      img.src = prodLayer.imageUrl;
+    } else {
+      finalize();
+    }
   };
 
-  const handleDeleteSelectedLayer = () => {
-    if (!selectedLayerId || selectedLayerId === "layer-bg") return;
-    setLayers((prev) => prev.filter((l) => l.id !== selectedLayerId));
-    setSelectedLayerId(null);
+  // Download 1-Click single shot
+  const handleDownloadSingleShot = (shot: GeneratedImageItem) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 2000;
+    canvas.height = 2000;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, 2000, 2000);
+
+    if (customPhotoUrl) {
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 200, 200, 1600, 1600);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            saveAs(blob, `${(productName || "Product").replace(/\s+/g, "_")}_Shot_${shot.shotIndex}_2000x2000.png`);
+          }
+        }, "image/png");
+      };
+      img.onerror = () => {
+        canvas.toBlob((blob) => {
+          if (blob) saveAs(blob, `Listing_Shot_${shot.shotIndex}.png`);
+        });
+      };
+      img.src = customPhotoUrl;
+    }
   };
 
-  // Ask AI handler: Gemini answers quickly about bullets, keywords, pricing
+  // Download all 15 images in 1 organized ZIP package
+  const handleDownloadAll15Zip = async () => {
+    if (!customPhotoUrl || shots.length === 0 || isDownloadingZip) return;
+    setIsDownloadingZip(true);
+    try {
+      const zip = new JSZip();
+      const folder = zip.folder(`${(productName || "Product").replace(/\s+/g, "_")}_15_Listing_Images`);
+
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      img.src = customPhotoUrl;
+
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+
+      for (let i = 1; i <= 15; i++) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 2000;
+        canvas.height = 2000;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.fillRect(0, 0, 2000, 2000);
+          ctx.drawImage(img, 200, 200, 1600, 1600);
+          const dataUrl = canvas.toDataURL("image/png");
+          const base64Data = dataUrl.split("base64,")[1];
+          folder?.file(`Shot_${i}_${SHOT_TITLES[i - 1].replace(/[^a-zA-Z0-9]/g, "_")}.png`, base64Data, { base64: true });
+        }
+      }
+
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${(productName || "Product").replace(/\s+/g, "_")}_15_Listing_Images.zip`);
+    } catch (err: any) {
+      console.error("ZIP download error:", err.message);
+    } finally {
+      setIsDownloadingZip(false);
+    }
+  };
+
+  // Ask AI handler: Gemini answers instantly about bullets, keywords, pricing
   const handleAskSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!askQuery.trim() || isAsking) return;
@@ -419,7 +491,7 @@ function ImageStudioContent() {
           message: askQuery.trim(),
           productContext: {
             title: productName || "Uploaded Product",
-            analysis: productAnalysis,
+            analysis: "Commercial Amazon Product Listing",
           },
         }),
       });
@@ -446,84 +518,7 @@ function ImageStudioContent() {
     setTimeout(() => setCopiedAnswer(false), 2000);
   };
 
-  // Export composed 2000x2000 HD image from Canva layers
-  const handleExportHd = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 2000;
-    canvas.height = 2000;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const scale = 2000 / 800;
-
-    // 1. Draw background image
-    const bgLayer = layers.find((l) => l.type === "background");
-    const bgImgUrl = bgLayer?.imageUrl || generatedImageUrl;
-
-    const finalizeAndDownload = () => {
-      // 2. Draw visible stacked layers
-      layers.forEach((l) => {
-        if (!l.visible || l.type === "background") return;
-
-        if (l.type === "product" && l.imageUrl) {
-          const img = new window.Image();
-          img.crossOrigin = "anonymous";
-          img.src = l.imageUrl;
-          try {
-            ctx.drawImage(img, l.x * scale, l.y * scale, l.width * scale, l.height * scale);
-          } catch {
-            // ignore
-          }
-        } else if (l.type === "badge" && l.text) {
-          ctx.fillStyle = l.fill || "#1E40AF";
-          ctx.beginPath();
-          ctx.roundRect(l.x * scale, l.y * scale, l.width * scale, l.height * scale, 24 * scale);
-          ctx.fill();
-          ctx.fillStyle = "#FFFFFF";
-          ctx.font = `bold ${16 * scale}px sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillText(l.text, (l.x + l.width / 2) * scale, (l.y + l.height / 2) * scale);
-        } else if (l.type === "text" && l.text) {
-          ctx.fillStyle = l.fill || "#FFFFFF";
-          ctx.font = `${l.fontWeight || "800"} ${(l.fontSize || 24) * scale}px sans-serif`;
-          ctx.textAlign = "left";
-          ctx.textBaseline = "top";
-          ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-          ctx.shadowBlur = 10 * scale;
-          ctx.fillText(l.text, l.x * scale, l.y * scale);
-          ctx.shadowBlur = 0;
-        }
-      });
-
-      canvas.toBlob((blob) => {
-        if (blob) {
-          saveAs(blob, `${(productName || "Product").replace(/\s+/g, "_")}_${selectedShotType}_HD.png`);
-        }
-      }, "image/png");
-    };
-
-    if (bgImgUrl) {
-      const bgImg = new window.Image();
-      bgImg.crossOrigin = "anonymous";
-      bgImg.onload = () => {
-        ctx.drawImage(bgImg, 0, 0, 2000, 2000);
-        finalizeAndDownload();
-      };
-      bgImg.onerror = () => {
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillRect(0, 0, 2000, 2000);
-        finalizeAndDownload();
-      };
-      bgImg.src = bgImgUrl;
-    } else {
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, 2000, 2000);
-      finalizeAndDownload();
-    }
-  };
-
-  const selectedLayer = layers.find((l) => l.id === selectedLayerId);
+  const selectedLayer = canvaLayers.find((l) => l.id === selectedLayerId);
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-20 select-none px-2 sm:px-4">
@@ -555,7 +550,7 @@ function ImageStudioContent() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold text-white">Listone.ai Studio</span>
+              <span className="text-sm font-extrabold text-white">Listone.ai 15 Listing Images</span>
               {isOwnerMode && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 flex items-center gap-1">
                   <Crown className="w-3 h-3 text-emerald-400" />
@@ -565,7 +560,7 @@ function ImageStudioContent() {
             </div>
           </div>
 
-          {/* Action Buttons: Upload + Click Photo */}
+          {/* Action Buttons: Upload + Click Photo + Download All ZIP */}
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -591,14 +586,19 @@ function ImageStudioContent() {
               <span>Click Photo</span>
             </button>
 
-            {generatedImageUrl && (
+            {shots.length > 0 && (
               <button
                 type="button"
-                onClick={handleExportHd}
+                onClick={handleDownloadAll15Zip}
+                disabled={isDownloadingZip}
                 className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-500 shadow-md flex items-center gap-1.5 transition-all"
               >
-                <Download className="w-4 h-4" />
-                <span>Download HD (2000x2000)</span>
+                {isDownloadingZip ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>{isDownloadingZip ? "Exporting ZIP..." : "Download All 15 (ZIP)"}</span>
               </button>
             )}
           </div>
@@ -672,43 +672,16 @@ function ImageStudioContent() {
         )}
       </div>
 
-      {/* 4. SHOT TYPE SELECTOR (1 FOCUSED IMAGE GENERATION - NO COLLAGE!) */}
-      {uploadedPhotoUrl && (
-        <div className="bg-[#121223] border border-white/10 rounded-2xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Select Listing Shot:
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full md:w-auto">
-            {SHOT_OPTIONS.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => {
-                  setSelectedShotType(opt.id);
-                  if (uploadedPhotoUrl) {
-                    generateSingleImage(uploadedPhotoUrl, productName, opt.id);
-                  }
-                }}
-                disabled={isGenerating}
-                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-center ${
-                  selectedShotType === opt.id
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/25"
-                    : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5"
-                }`}
-              >
-                <span>{opt.icon}</span>
-                <span className="truncate">{opt.label}</span>
-              </button>
-            ))}
-          </div>
+      {/* 4. LOADING STATE */}
+      {isGenerating && (
+        <div className="w-full p-6 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-sm flex items-center justify-center gap-3 animate-pulse">
+          <RefreshCw className="w-5 h-5 animate-spin text-blue-400" />
+          <span className="font-bold">{generationStep || "Synthesizing 15 listing images..."}</span>
         </div>
       )}
 
-      {/* 5. MAIN WORKSPACE: IF NO PHOTO, INITIAL HERO; IF PHOTO, INTERACTIVE CANVA STUDIO */}
-      {!uploadedPhotoUrl && !generatedImageUrl ? (
+      {/* 5. INITIAL STATE IF NO PHOTO UPLOADED */}
+      {!customPhotoUrl && !isGenerating && (
         <div className="flex flex-col items-center justify-center min-h-[55vh] text-center p-4 sm:p-8">
           <div className="p-8 sm:p-12 rounded-3xl bg-[#121223]/70 border border-white/10 shadow-2xl flex flex-col items-center max-w-md w-full">
             <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-6 shadow-inner">
@@ -717,7 +690,7 @@ function ImageStudioContent() {
 
             <h3 className="text-lg font-bold text-white mb-2">Upload or Click a Product Photo</h3>
             <p className="text-xs text-slate-400 mb-6 max-w-xs">
-              AI analyzes your product and generates one high-quality, photorealistic listing image with full Canva editing.
+              AI generates all 15 distinct, high-quality commercial listing shots on light backgrounds with Canva layer editing.
             </p>
 
             <div className="space-y-3 w-full">
@@ -741,379 +714,360 @@ function ImageStudioContent() {
             </div>
           </div>
         </div>
-      ) : (
-        /* 6. REAL CANVA-STYLE EDITING WORKSPACE: 1 HIGH-QUALITY IMAGE WITH EDITABLE LAYERS */
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-          {/* LEFT: CANVA TOOLBAR & LAYER CONTROLS */}
-          <aside className="lg:col-span-1 bg-[#121223] border border-white/10 rounded-2xl p-4 space-y-5 shadow-xl">
-            <div>
-              <span className="text-xs font-black uppercase text-blue-400 tracking-wider block mb-1">
-                Canva Layer Tools
-              </span>
-              <p className="text-[11px] text-slate-400">
-                Click & drag layers freely. Use corner handles to resize.
-              </p>
-            </div>
+      )}
 
-            {/* Quick Add Elements */}
-            <div className="space-y-2 pt-2 border-t border-white/10">
-              <span className="text-[11px] font-bold text-slate-300 block">Add Text</span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleAddText("headline")}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-white font-bold flex items-center justify-center gap-1.5"
-                >
-                  <Type className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Headline</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddText("subtitle")}
-                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-200 flex items-center justify-center gap-1.5"
-                >
-                  <Type className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Subtitle</span>
-                </button>
-              </div>
-            </div>
+      {/* 6. COMPLETE 15 LISTING IMAGES GALLERY GRID */}
+      {shots.length > 0 && customPhotoUrl && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase text-blue-400 tracking-wider">
+              15 High-Quality Commercial Listing Images ({shots.length} Shots)
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Click any image to edit in Canva or download HD
+            </span>
+          </div>
 
-            {/* Quick Add Badges */}
-            <div className="space-y-2 pt-2 border-t border-white/10">
-              <span className="text-[11px] font-bold text-slate-300 block">Add Trust Badges</span>
-              <div className="space-y-1.5">
-                {[
-                  { text: "✦ AMAZON TOP RATED", color: "#1E40AF" },
-                  { text: "✓ 100% QUALITY INSPECTED", color: "#047857" },
-                  { text: "💧 100% LEAK-PROOF SEAL", color: "#0284C7" },
-                  { text: "⚡ HIGH-DENSITY MICRO-MESH", color: "#4F46E5" },
-                ].map((b, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleAddBadge(b.text, b.color)}
-                    className="w-full p-2 rounded-xl text-left text-xs font-bold text-white flex items-center justify-between border border-white/5 hover:border-white/20 transition-colors"
-                    style={{ backgroundColor: `${b.color}25` }}
-                  >
-                    <span>{b.text}</span>
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: b.color }}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-5">
+            {shots.map((shot) => (
+              <div
+                key={shot.id}
+                className="group relative bg-[#121223] border border-white/10 hover:border-blue-500/50 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 flex flex-col"
+              >
+                {/* Visual Canvas Display */}
+                <div className="relative aspect-square w-full overflow-hidden bg-white">
+                  <ListingShotVisual
+                    shotIndex={shot.shotIndex}
+                    productImage={customPhotoUrl}
+                    productName={productName || "Product"}
+                  />
 
-            {/* Overlay Product Cutout */}
-            {uploadedPhotoUrl && (
-              <div className="pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={handleAddProductOverlay}
-                  className="w-full p-2.5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-bold flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Layers className="w-4 h-4" />
-                  <span>Overlay Original Product</span>
-                </button>
-              </div>
-            )}
+                  {/* Hover Overlay with Action Buttons */}
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center gap-2.5 p-4 z-30">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCanvaModal(shot)}
+                      className="w-full max-w-[200px] py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold shadow-lg flex items-center justify-center gap-2 transition-transform transform hover:scale-105"
+                    >
+                      <Layers className="w-4 h-4" />
+                      <span>Edit in Canva Studio</span>
+                    </button>
 
-            {/* Selected Layer Properties */}
-            {selectedLayer && selectedLayer.id !== "layer-bg" && (
-              <div className="p-3 rounded-xl bg-[#090A14] border border-blue-500/30 space-y-3 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-blue-300">Edit Selected Layer</span>
-                  <button
-                    type="button"
-                    onClick={handleDeleteSelectedLayer}
-                    className="p-1 rounded text-rose-400 hover:bg-rose-500/20"
-                    title="Delete Layer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadSingleShot(shot)}
+                      className="w-full max-w-[200px] py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg flex items-center justify-center gap-2 transition-transform transform hover:scale-105"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download HD (2000x2000)</span>
+                    </button>
+                  </div>
                 </div>
 
-                {selectedLayer.text !== undefined && (
-                  <div>
-                    <label className="text-[10px] text-slate-400 block mb-1">Text Content</label>
-                    <input
-                      type="text"
-                      value={selectedLayer.text}
-                      onChange={(e) =>
-                        setLayers((prev) =>
-                          prev.map((l) =>
-                            l.id === selectedLayer.id ? { ...l, text: e.target.value } : l
-                          )
-                        )
-                      }
-                      className="w-full bg-[#121223] border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-blue-500"
-                    />
-                  </div>
-                )}
-
-                {selectedLayer.fontSize !== undefined && (
-                  <div>
-                    <div className="flex justify-between text-[10px] text-slate-400 mb-1">
-                      <span>Font Size</span>
-                      <span>{selectedLayer.fontSize}px</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={12}
-                      max={48}
-                      value={selectedLayer.fontSize}
-                      onChange={(e) =>
-                        setLayers((prev) =>
-                          prev.map((l) =>
-                            l.id === selectedLayer.id
-                              ? { ...l, fontSize: parseInt(e.target.value) }
-                              : l
-                          )
-                        )
-                      }
-                      className="w-full"
-                    />
-                  </div>
-                )}
+                {/* Card Title Bar */}
+                <div className="p-3 bg-[#0F101E] border-t border-white/10 flex items-center justify-between">
+                  <span className="text-xs font-bold text-white truncate pr-2">
+                    {shot.title}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCanvaModal(shot)}
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white shrink-0"
+                    title="Customize"
+                  >
+                    <Layers className="w-3.5 h-3.5 text-blue-400" />
+                  </button>
+                </div>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
+      )}
 
-            {/* Regenerate Shot */}
-            <div className="pt-2 border-t border-white/10">
+      {/* 7. CANVA LAYER EDITING MODAL */}
+      {activeEditingShot && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-[#121223] border border-white/15 rounded-3xl max-w-5xl w-full p-4 sm:p-6 shadow-2xl relative flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-blue-400" />
+                <span className="text-sm font-extrabold text-white">
+                  Canva Layer Editor: {activeEditingShot.title}
+                </span>
+              </div>
               <button
                 type="button"
-                onClick={() => {
-                  if (uploadedPhotoUrl) {
-                    generateSingleImage(uploadedPhotoUrl, productName, selectedShotType);
-                  }
-                }}
-                disabled={isGenerating}
-                className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+                onClick={() => setActiveEditingShot(null)}
+                className="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 hover:text-white"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Regenerate This Shot</span>
+                <X className="w-5 h-5" />
               </button>
             </div>
-          </aside>
 
-          {/* RIGHT: INTERACTIVE CANVA ARTBOARD (ONE FOCUSED HIGH-QUALITY IMAGE) */}
-          <main className="lg:col-span-3 flex flex-col items-center">
-            {/* Loading Indicator */}
-            {isGenerating && (
-              <div className="w-full mb-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs flex items-center justify-center gap-2 animate-pulse">
-                <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
-                <span>{generationStep || "Generating photorealistic image..."}</span>
-              </div>
-            )}
+            {/* Modal Content: Tools on Left, Artboard on Right */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto pr-1">
+              {/* Left: Canva Layer Toolbar */}
+              <div className="space-y-4 bg-[#0A0B16] border border-white/10 rounded-2xl p-4">
+                <span className="text-xs font-black uppercase text-blue-400 tracking-wider block">
+                  Layer Operations
+                </span>
 
-            {/* Canva Artboard Container */}
-            <div
-              ref={canvasStageRef}
-              onClick={() => setSelectedLayerId(null)}
-              className="relative w-full max-w-[640px] aspect-square rounded-3xl overflow-hidden bg-white shadow-2xl border border-slate-200 select-none group"
-            >
-              {/* Layer 0: Generated Photorealistic Background Image */}
-              {generatedImageUrl ? (
-                <img
-                  src={generatedImageUrl}
-                  alt="Generated Listing Visual"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 text-slate-400 p-6 text-center">
-                  <RefreshCw className="w-8 h-8 animate-spin text-blue-500 mb-2" />
-                  <span className="text-xs font-bold">Synthesizing realistic listing scene...</span>
+                {/* Add Text */}
+                <div className="space-y-2">
+                  <span className="text-[11px] font-bold text-slate-300 block">Add Text</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAddCanvaText("headline")}
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-white font-bold flex items-center justify-center gap-1.5"
+                    >
+                      <Type className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Headline</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAddCanvaText("subtitle")}
+                      className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs text-slate-200 flex items-center justify-center gap-1.5"
+                    >
+                      <Type className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Subtitle</span>
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              {/* Render Stacked Draggable / Resizable Layers */}
-              {layers.map((layer) => {
-                if (!layer.visible || layer.type === "background") return null;
+                {/* Add Badges */}
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <span className="text-[11px] font-bold text-slate-300 block">Add Trust Badges</span>
+                  <div className="space-y-1.5">
+                    {[
+                      { text: "✦ AMAZON TOP RATED", color: "#1E40AF" },
+                      { text: "✓ 100% QUALITY INSPECTED", color: "#047857" },
+                      { text: "💧 100% LEAK-PROOF SEAL", color: "#0284C7" },
+                      { text: "⚡ HIGH-DENSITY MICRO-MESH", color: "#4F46E5" },
+                    ].map((b, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => handleAddCanvaBadge(b.text, b.color)}
+                        className="w-full p-2 rounded-xl text-left text-xs font-bold text-white flex items-center justify-between border border-white/5 hover:border-white/20 transition-colors"
+                        style={{ backgroundColor: `${b.color}25` }}
+                      >
+                        <span>{b.text}</span>
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: b.color }} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                const isSelected = selectedLayerId === layer.id;
-                const isDraggingThis = dragState.isDragging && dragState.layerId === layer.id;
-
-                // 1. Text Layer
-                if (layer.type === "text") {
-                  return (
-                    <div
-                      key={layer.id}
-                      onPointerDown={(e) => handleLayerPointerDown(e, layer)}
-                      onDoubleClick={() => setInlineEditingId(layer.id)}
-                      className={`absolute select-none px-3 py-1.5 rounded-lg touch-none ${
-                        isDraggingThis ? "cursor-grabbing" : "cursor-grab"
-                      } ${
-                        isSelected
-                          ? "ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent shadow-xl"
-                          : "hover:ring-1 hover:ring-blue-400/50"
-                      }`}
-                      style={{
-                        left: `${(layer.x / 800) * 100}%`,
-                        top: `${(layer.y / 800) * 100}%`,
-                        width: `${(layer.width / 800) * 100}%`,
-                        zIndex: isSelected ? 30 : 10,
-                      }}
-                    >
-                      {inlineEditingId === layer.id ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={layer.text || ""}
-                          onChange={(e) =>
-                            setLayers((prev) =>
-                              prev.map((l) =>
-                                l.id === layer.id ? { ...l, text: e.target.value } : l
-                              )
-                            )
-                          }
-                          onBlur={() => setInlineEditingId(null)}
-                          onKeyDown={(e) => e.key === "Enter" && setInlineEditingId(null)}
-                          className="bg-black/50 text-white rounded px-2 py-1 outline-none w-full"
-                          style={{
-                            fontSize: `${(layer.fontSize || 24) * 0.75}px`,
-                            fontWeight: layer.fontWeight || "800",
-                          }}
-                        />
-                      ) : (
-                        <span
-                          className="block text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-tight select-none pointer-events-none"
-                          style={{
-                            fontSize: `${(layer.fontSize || 24) * 0.75}px`,
-                            fontWeight: layer.fontWeight || "800",
-                            color: layer.fill || "#FFFFFF",
-                          }}
-                        >
-                          {layer.text}
-                        </span>
-                      )}
-
-                      {/* Resize Corner Handle */}
-                      {isSelected && (
-                        <div
-                          onPointerDown={(e) => handleResizePointerDown(e, layer)}
-                          className="absolute -right-1.5 -bottom-1.5 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize z-40 touch-none shadow-md"
-                        />
-                      )}
+                {/* Edit Selected Layer */}
+                {selectedLayer && selectedLayer.id !== "layer-bg" && (
+                  <div className="p-3 rounded-xl bg-[#121223] border border-blue-500/30 space-y-3 pt-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-blue-300">Edit Selected Layer</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCanvaLayers((prev) => prev.filter((l) => l.id !== selectedLayer.id));
+                          setSelectedLayerId(null);
+                        }}
+                        className="p-1 rounded text-rose-400 hover:bg-rose-500/20"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
-                  );
-                }
 
-                // 2. Badge Layer
-                if (layer.type === "badge") {
-                  return (
-                    <div
-                      key={layer.id}
-                      onPointerDown={(e) => handleLayerPointerDown(e, layer)}
-                      onDoubleClick={() => setInlineEditingId(layer.id)}
-                      className={`absolute select-none flex items-center justify-center px-4 py-2 rounded-full shadow-lg touch-none ${
-                        isDraggingThis ? "cursor-grabbing" : "cursor-grab"
-                      } ${
-                        isSelected
-                          ? "ring-2 ring-white ring-offset-2 ring-offset-transparent shadow-2xl"
-                          : "hover:ring-1 hover:ring-white/50"
-                      }`}
-                      style={{
-                        left: `${(layer.x / 800) * 100}%`,
-                        top: `${(layer.y / 800) * 100}%`,
-                        backgroundColor: layer.fill || "#1E40AF",
-                        zIndex: isSelected ? 30 : 10,
-                      }}
-                    >
-                      {inlineEditingId === layer.id ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={layer.text || ""}
-                          onChange={(e) =>
-                            setLayers((prev) =>
-                              prev.map((l) =>
-                                l.id === layer.id ? { ...l, text: e.target.value } : l
-                              )
-                            )
-                          }
-                          onBlur={() => setInlineEditingId(null)}
-                          onKeyDown={(e) => e.key === "Enter" && setInlineEditingId(null)}
-                          className="bg-transparent text-white text-xs font-black outline-none text-center"
-                        />
-                      ) : (
-                        <span className="text-white text-xs font-black whitespace-nowrap pointer-events-none tracking-wider">
-                          {layer.text}
-                        </span>
-                      )}
-
-                      {/* Resize Handle */}
-                      {isSelected && (
-                        <div
-                          onPointerDown={(e) => handleResizePointerDown(e, layer)}
-                          className="absolute -right-1.5 -bottom-1.5 w-4 h-4 bg-white border-2 border-blue-600 rounded-full cursor-nwse-resize z-40 touch-none shadow-md"
-                        />
-                      )}
-                    </div>
-                  );
-                }
-
-                // 3. Product Overlay Layer
-                if (layer.type === "product" && layer.imageUrl) {
-                  return (
-                    <div
-                      key={layer.id}
-                      onPointerDown={(e) => handleLayerPointerDown(e, layer)}
-                      className={`absolute select-none flex items-center justify-center touch-none ${
-                        isDraggingThis ? "cursor-grabbing" : "cursor-grab"
-                      } ${
-                        isSelected
-                          ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-transparent shadow-2xl"
-                          : "hover:ring-1 hover:ring-blue-400/50"
-                      }`}
-                      style={{
-                        left: `${(layer.x / 800) * 100}%`,
-                        top: `${(layer.y / 800) * 100}%`,
-                        width: `${(layer.width / 800) * 100}%`,
-                        height: `${(layer.height / 800) * 100}%`,
-                        zIndex: isSelected ? 30 : 10,
-                      }}
-                    >
-                      <img
-                        src={layer.imageUrl}
-                        alt="Product Overlay"
-                        className="w-full h-full object-contain drop-shadow-2xl pointer-events-none"
+                    {selectedLayer.text !== undefined && (
+                      <input
+                        type="text"
+                        value={selectedLayer.text}
+                        onChange={(e) =>
+                          setCanvaLayers((prev) =>
+                            prev.map((l) => (l.id === selectedLayer.id ? { ...l, text: e.target.value } : l))
+                          )
+                        }
+                        className="w-full bg-[#0A0B16] border border-white/15 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-blue-500"
                       />
+                    )}
 
-                      {/* Resize Handle */}
-                      {isSelected && (
-                        <div
-                          onPointerDown={(e) => handleResizePointerDown(e, layer)}
-                          className="absolute -right-2 -bottom-2 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize z-40 touch-none shadow-md"
+                    {selectedLayer.fontSize !== undefined && (
+                      <div>
+                        <div className="flex justify-between text-[10px] text-slate-400 mb-1">
+                          <span>Font Size</span>
+                          <span>{selectedLayer.fontSize}px</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={14}
+                          max={48}
+                          value={selectedLayer.fontSize}
+                          onChange={(e) =>
+                            setCanvaLayers((prev) =>
+                              prev.map((l) =>
+                                l.id === selectedLayer.id ? { ...l, fontSize: parseInt(e.target.value) } : l
+                              )
+                            )
+                          }
+                          className="w-full"
                         />
-                      )}
-                    </div>
-                  );
-                }
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                return null;
-              })}
-            </div>
-
-            {/* Bottom Actions Bar */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 w-full max-w-[640px]">
-              <div className="text-xs text-slate-400">
-                <span className="font-bold text-white">Shot: </span>
-                <span>{SHOT_OPTIONS.find((s) => s.id === selectedShotType)?.label}</span>
-              </div>
-
-              <div className="flex items-center gap-2">
+                {/* Download in Modal */}
                 <button
                   type="button"
-                  onClick={handleExportHd}
-                  className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg flex items-center gap-1.5 transition-all"
+                  onClick={handleExportCanvaHd}
+                  className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2 transition-all mt-4"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download HD (2000x2000)</span>
                 </button>
               </div>
+
+              {/* Right: Canva Artboard */}
+              <div className="lg:col-span-2 flex flex-col items-center justify-center">
+                <div
+                  onClick={() => setSelectedLayerId(null)}
+                  className="relative w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden bg-white shadow-2xl border border-slate-300 select-none"
+                >
+                  {/* Layer 0: Shot Visual */}
+                  <ListingShotVisual
+                    shotIndex={activeEditingShot.shotIndex}
+                    productImage={customPhotoUrl || ""}
+                    productName={productName || "Product"}
+                  />
+
+                  {/* Overlay Layers */}
+                  {canvaLayers.map((layer) => {
+                    if (!layer.visible || layer.type === "background") return null;
+
+                    const isSelected = selectedLayerId === layer.id;
+                    const isDraggingThis = dragState.isDragging && dragState.layerId === layer.id;
+
+                    // Text Layer
+                    if (layer.type === "text") {
+                      return (
+                        <div
+                          key={layer.id}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            setSelectedLayerId(layer.id);
+                            setDragState({
+                              isDragging: true,
+                              layerId: layer.id,
+                              startX: e.clientX,
+                              startY: e.clientY,
+                              initialX: layer.x,
+                              initialY: layer.y,
+                            });
+                          }}
+                          className={`absolute select-none px-3 py-1 rounded-lg touch-none ${
+                            isDraggingThis ? "cursor-grabbing" : "cursor-grab"
+                          } ${
+                            isSelected
+                              ? "ring-2 ring-blue-500 ring-offset-1 ring-offset-transparent shadow-xl"
+                              : "hover:ring-1 hover:ring-blue-400/50"
+                          }`}
+                          style={{
+                            left: `${(layer.x / 800) * 100}%`,
+                            top: `${(layer.y / 800) * 100}%`,
+                            width: `${(layer.width / 800) * 100}%`,
+                            zIndex: isSelected ? 30 : 10,
+                          }}
+                        >
+                          <span
+                            className="block font-black leading-tight select-none pointer-events-none"
+                            style={{
+                              fontSize: `${(layer.fontSize || 24) * 0.62}px`,
+                              color: layer.fill || "#1E3A8A",
+                            }}
+                          >
+                            {layer.text}
+                          </span>
+
+                          {isSelected && (
+                            <div
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                setResizeState({
+                                  isResizing: true,
+                                  layerId: layer.id,
+                                  startX: e.clientX,
+                                  startY: e.clientY,
+                                  initialWidth: layer.width,
+                                  initialHeight: layer.height,
+                                });
+                              }}
+                              className="absolute -right-1.5 -bottom-1.5 w-4 h-4 bg-blue-500 border-2 border-white rounded-full cursor-nwse-resize z-40 touch-none shadow-md"
+                            />
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Badge Layer
+                    if (layer.type === "badge") {
+                      return (
+                        <div
+                          key={layer.id}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            setSelectedLayerId(layer.id);
+                            setDragState({
+                              isDragging: true,
+                              layerId: layer.id,
+                              startX: e.clientX,
+                              startY: e.clientY,
+                              initialX: layer.x,
+                              initialY: layer.y,
+                            });
+                          }}
+                          className={`absolute select-none flex items-center justify-center px-3 py-1.5 rounded-full shadow-lg touch-none ${
+                            isDraggingThis ? "cursor-grabbing" : "cursor-grab"
+                          } ${
+                            isSelected
+                              ? "ring-2 ring-white ring-offset-2 ring-offset-transparent shadow-2xl"
+                              : "hover:ring-1 hover:ring-white/50"
+                          }`}
+                          style={{
+                            left: `${(layer.x / 800) * 100}%`,
+                            top: `${(layer.y / 800) * 100}%`,
+                            backgroundColor: layer.fill || "#1E40AF",
+                            zIndex: isSelected ? 30 : 10,
+                          }}
+                        >
+                          <span className="text-white text-[11px] font-black whitespace-nowrap pointer-events-none tracking-wider">
+                            {layer.text}
+                          </span>
+
+                          {isSelected && (
+                            <div
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                setResizeState({
+                                  isResizing: true,
+                                  layerId: layer.id,
+                                  startX: e.clientX,
+                                  startY: e.clientY,
+                                  initialWidth: layer.width,
+                                  initialHeight: layer.height,
+                                });
+                              }}
+                              className="absolute -right-1.5 -bottom-1.5 w-4 h-4 bg-white border-2 border-blue-600 rounded-full cursor-nwse-resize z-40 touch-none shadow-md"
+                            />
+                          )}
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })}
+                </div>
+              </div>
             </div>
-          </main>
+          </div>
         </div>
       )}
     </div>
@@ -1127,7 +1081,7 @@ export default function ImageStudioPage() {
         <div className="flex items-center justify-center min-h-[60vh] text-slate-400">
           <div className="flex items-center gap-3">
             <RefreshCw className="w-5 h-5 animate-spin text-blue-500" />
-            <span className="text-sm font-semibold">Loading Image Studio...</span>
+            <span className="text-sm font-semibold">Loading 15 Listing Images Studio...</span>
           </div>
         </div>
       }
