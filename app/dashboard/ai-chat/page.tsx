@@ -166,7 +166,7 @@ How can I help boost your sales today?`,
             }`}
           >
             <Package className="w-3.5 h-3.5" />
-            <span>Product: {activeProject ? activeProject.name.slice(0, 20) + "..." : "Default SKU"}</span>
+            <span>Product Context: {activeProject?.name ? activeProject.name.slice(0, 18) + "..." : "Active"}</span>
             <span className={`w-2 h-2 rounded-full ${useProductContext ? "bg-emerald-400" : "bg-slate-500"}`} />
           </button>
         </div>
@@ -252,20 +252,6 @@ How can I help boost your sales today?`,
         )}
 
         <div ref={messagesEndRef} />
-      </div>
-
-      {/* Quick Action Chips Bar */}
-      <div className="px-6 py-2.5 bg-[#0D0D19] border-t border-white/5 flex items-center gap-2 overflow-x-auto no-scrollbar">
-        <span className="text-[11px] uppercase font-bold text-slate-400 shrink-0">Quick prompts:</span>
-        {quickChips.map((chip) => (
-          <button
-            key={chip.label}
-            onClick={() => handleSendMessage(chip.prompt)}
-            className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold whitespace-nowrap transition-colors"
-          >
-            {chip.label}
-          </button>
-        ))}
       </div>
 
       {/* Input Box Footer */}

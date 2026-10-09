@@ -306,15 +306,22 @@ export default function CanvaEditorPage() {
       if (!l.visible || l.type === "background") return;
 
       if (l.type === "product") {
-        // Draw centered product badge simulation
-        ctx.fillStyle = "#1E1E2F";
-        ctx.beginPath();
-        ctx.arc(400 * scale, 400 * scale, 180 * scale, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = `${140 * scale}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("🎧", 400 * scale, 400 * scale);
+        if (l.imageUrl) {
+          const img = new window.Image();
+          img.crossOrigin = "anonymous";
+          img.src = l.imageUrl;
+          try {
+            ctx.drawImage(img, l.x * scale, l.y * scale, l.width * scale, l.height * scale);
+          } catch {
+            ctx.fillStyle = "#1E1E2F";
+            ctx.fillRect(l.x * scale, l.y * scale, l.width * scale, l.height * scale);
+          }
+        } else {
+          ctx.fillStyle = "#1E1E2F";
+          ctx.beginPath();
+          ctx.arc(400 * scale, 400 * scale, 180 * scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
       } else if (l.type === "badge" && l.text) {
         ctx.fillStyle = l.fill || "#EC4899";
         ctx.roundRect(l.x * scale, l.y * scale, l.width * scale, l.height * scale, 24 * scale);
@@ -709,9 +716,18 @@ export default function CanvaEditorPage() {
                       opacity: layer.opacity ?? 1,
                     }}
                   >
-                    <div className="w-full h-full rounded-full bg-gradient-to-tr from-brand-indigo/20 to-brand-violet/20 flex flex-col items-center justify-center">
-                      <span className="text-8xl drop-shadow-2xl">🎧</span>
-                    </div>
+                    {layer.imageUrl ? (
+                      <img
+                        src={layer.imageUrl}
+                        alt="Product"
+                        className="w-full h-full object-contain drop-shadow-2xl pointer-events-none select-none"
+                      />
+                    ) : (
+                      <div className="w-full h-full rounded-2xl bg-gradient-to-tr from-brand-indigo/20 to-brand-violet/20 flex flex-col items-center justify-center border border-white/20 p-4">
+                        <Sparkles className="w-10 h-10 text-brand-pink mb-2" />
+                        <span className="text-xs text-white font-bold">Product Cutout</span>
+                      </div>
+                    )}
                   </div>
                 );
               }

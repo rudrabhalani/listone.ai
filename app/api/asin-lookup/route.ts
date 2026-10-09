@@ -40,8 +40,8 @@ const CATALOG_PRESETS: Record<
   },
   B07XJ8C8F7: {
     asin: "B07XJ8C8F7",
-    title: "Lumière Botanicals 20% Vitamin C Radiance Facial Serum with Hyaluronic Acid",
-    brand: "Lumière Botanicals",
+    title: "Pure Botanics 20% Vitamin C Radiance Facial Serum with Hyaluronic Acid",
+    brand: "Pure Botanics",
     category: "Beauty & Personal Care > Skin Care",
     imageUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=800&q=80",
     features: [

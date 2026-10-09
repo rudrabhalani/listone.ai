@@ -80,7 +80,7 @@ export const BeforeAfterSlider: React.FC = () => {
                   <div className="w-44 h-44 sm:w-56 sm:h-56 rounded-3xl bg-gradient-to-tr from-brand-indigo via-brand-violet to-brand-pink p-1 shadow-2xl shadow-brand-violet/50 transform hover:scale-105 transition-transform duration-500">
                     <div className="w-full h-full bg-[#0E0E1C] rounded-[22px] flex flex-col items-center justify-center p-4">
                       <span className="text-5xl sm:text-6xl">🧴</span>
-                      <span className="mt-2 text-xs font-bold text-white tracking-wider uppercase">Lumière Vital</span>
+                      <span className="mt-2 text-xs font-bold text-white tracking-wider uppercase">Radiance Glow</span>
                       <span className="text-[10px] text-pink-300">20% Vitamin C + Hyaluronic</span>
                     </div>
                   </div>

@@ -26,17 +26,17 @@ interface BulletItem {
 export default function ListingCopyPage() {
   const { activeProject, deductCredits } = useApp();
 
-  const [productName, setProductName] = useState(activeProject?.name || "Lumière Vital Vitamin C Serum");
-  const [brandName, setBrandName] = useState(activeProject?.brandName || "Lumière Botanicals");
+  const [productName, setProductName] = useState(activeProject?.name || "CloudPace Pro Cushion Running Sneakers");
+  const [brandName, setBrandName] = useState(activeProject?.brandName || "CloudPace Athletics");
   const [marketplace, setMarketplace] = useState(activeProject?.marketplace || "Amazon US");
-  const [targetKeywords, setTargetKeywords] = useState("vitamin c serum, hyaluronic acid, anti aging facial serum, dark spot corrector");
+  const [targetKeywords, setTargetKeywords] = useState("running sneakers, athletic footwear, cushion running shoes, lightweight trainers");
 
   const [isLoading, setIsLoading] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Listing Output State
   const [title, setTitle] = useState(
-    "Lumière Botanicals Vitamin C Facial Serum with 20% Pure Kakadu Plum and Hyaluronic Acid, Radiance Glow Formula, 1 Fl Oz"
+    "CloudPace Pro Cushion Running Sneakers - High-Performance Breathable Athletic Footwear with Responsive Nitrogen Foam Sole"
   );
   const [bullets, setBullets] = useState<BulletItem[]>([
     {
@@ -66,7 +66,7 @@ export default function ListingCopyPage() {
     },
   ]);
   const [description, setDescription] = useState(
-    `<p>Unveil radiant, visibly firmer, and deeply replenished skin with the <strong>Lumière Botanicals Vitamin C Facial Serum</strong>. Formulated using pharmaceutical-grade botanical extracts, this lightweight daily treatment shields your complexion against environmental stressors while restoring a lit-from-within luminosity.</p>\n<p>Unlike conventional serums that oxidize rapidly, our dark amber UV-protective glass bottle preserves active potency from the very first drop to the last. Incorporate it effortlessly into your morning skincare ritual for visible tone refinement.</p>\n<ul>\n  <li><strong>Targeted Radiance:</strong> Targets sun spots, hyperpigmentation, and uneven texture.</li>\n  <li><strong>Deep Moisture Lock:</strong> Multi-weight hyaluronic acid delivers non-comedogenic hydration.</li>\n  <li><strong>Mindful Formulation:</strong> Hypoallergenic, sulfate-free, and cruelty-free certified.</li>\n</ul>`
+    `<p>Experience unmatched comfort and speed with the <strong>CloudPace Pro Cushion Running Sneakers</strong>. Engineered using responsive nitrogen-infused foam, these performance trainers provide high energy return while absorbing joint impact on roads, tracks, and treadmills.</p>\n<p>The breathable engineered mesh upper keeps your feet cool and dry across long-distance runs, while our carbon-rubber traction outsole ensures maximum grip in all weather conditions.</p>\n<ul>\n  <li><strong>Responsive Cushioning:</strong> Nitrogen-infused foam delivers explosive energy return.</li>\n  <li><strong>Breathable Upper:</strong> Multi-zone mesh prevents moisture build-up and hot spots.</li>\n  <li><strong>All-Weather Grip:</strong> Carbon-reinforced rubber tread resists wear and slippage.</li>\n</ul>`
   );
   const [searchTerms, setSearchTerms] = useState(
     "brightening facial oil moisturizing hydrating anti wrinkle pore minimizer blemishes sensitive skin daily morning routine dropper vegan"
