@@ -6,12 +6,13 @@ export const aboutConfig = {
       "Democratizing studio-grade e-commerce product photography, A+ content, and algorithmic copywriting so independent merchants and global brands can thrive without exorbitant agency fees.",
   },
   founder: {
-    name: "Bhalani Rudra Sandipbhai",
+    name: "BHALANI RUDRA SANDIPBHAI",
     role: "Founder & Owner, Listone.ai",
     tag: "17-year-old entrepreneur",
+    photoUrl: "/founder.jpg",
     bio: "Rudra started Listone.ai with one goal: give every online seller, big or small, access to professional product images and listing content without expensive studios or agencies.",
     extendedBio:
-      "Obsessed with generative computer vision and e-commerce growth mechanics, Rudra recognized that while big brands invest tens of thousands of dollars on 3D rendering studios, independent sellers often struggle with smartphone photos that fail marketplace compliance. Listone.ai was built to bridge that gap in under three minutes.",
+      "At 17 years old, Bhalani Rudra Sandipbhai recognized the immense hurdle small sellers face: photography agencies charge $800+ per SKU while amateur phone photos fail Amazon's strict compliance rules. Rudra built Listone.ai to deliver photorealistic, Amazon-ready 15-shot image packs, A+ content, and SEO bullets in seconds.",
     location: "India • Global SaaS",
     avatarPlaceholder: "RB",
     socials: {
@@ -35,10 +36,10 @@ export const aboutConfig = {
         "Built the first background isolation pipeline that refused to hallucinate fake logos or alter physical dimensions, preserving authentic product integrity.",
     },
     {
-      year: "Phase 3 • First 100 Sellers",
-      title: "Canva Layer Engine & A+ Content",
+      year: "Phase 3 • Canva Layer Engine",
+      title: "All-In-One Unified Studio",
       description:
-        "Integrated editable layer graphs and 7-module Amazon Enhanced Brand Content layouts directly into the workflow after seller feedback.",
+        "Integrated editable layer graphs and 7-module Amazon Enhanced Brand Content layouts directly into one unified workflow with real-time editing.",
     },
     {
       year: "Today • Production Launch",
@@ -66,7 +67,7 @@ export const aboutConfig = {
   values: [
     {
       title: "Speed",
-      description: "Generations delivered in minutes, not two-week agency turnaround cycles.",
+      description: "Generations delivered in seconds, not two-week agency turnaround cycles.",
       emoji: "⚡",
     },
     {

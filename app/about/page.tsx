@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -52,22 +53,27 @@ export default function AboutPage() {
         <section className="mt-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="glass-card rounded-3xl p-8 sm:p-12 border border-white/10 shadow-2xl relative overflow-hidden">
             <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              {/* Photo Upload Slot / Avatar with Gradient Ring */}
+              {/* Photo Upload Slot / Avatar with Gradient Ring and black blur bg */}
               <div className="relative group shrink-0">
-                {/* Gradient ring */}
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-brand-indigo via-brand-violet to-brand-pink blur-sm opacity-80 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute -inset-2 rounded-3xl bg-gradient-to-tr from-brand-indigo via-brand-violet to-brand-pink blur-xl opacity-40 group-hover:opacity-70 transition-opacity" />
 
-                <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-[#141426] border-2 border-white/20 flex flex-col items-center justify-center text-center p-3 overflow-hidden shadow-2xl">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-pink flex items-center justify-center text-white font-extrabold text-2xl mb-1 shadow-md">
-                    {aboutConfig.founder.avatarPlaceholder}
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-300">Rudra Bhalani</span>
-                  <span className="text-[9px] text-pink-300">Founder & Owner</span>
-
-                  {/* Photo Slot Hint */}
-                  <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white p-2">
-                    <Camera className="w-5 h-5 text-brand-pink mb-1" />
-                    <span className="text-[10px] text-center font-semibold">Photo slot reserved</span>
+                <div className="relative w-56 h-72 sm:w-64 sm:h-80 rounded-2xl overflow-hidden border border-white/20 bg-black/75 backdrop-blur-xl shadow-2xl flex items-center justify-center">
+                  <Image
+                    src="/founder.jpg"
+                    alt="BHALANI RUDRA SANDIPBHAI"
+                    fill
+                    sizes="(max-width: 768px) 224px, 256px"
+                    className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                    priority
+                  />
+                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+                  <div className="absolute bottom-3 inset-x-3 flex items-center justify-between text-[10px] font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-brand-pink text-white shadow">
+                      Founder & Owner
+                    </span>
+                    <span className="text-slate-300 bg-black/60 px-2 py-0.5 rounded backdrop-blur-md">
+                      17-Year-Old
+                    </span>
                   </div>
                 </div>
               </div>

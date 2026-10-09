@@ -6,10 +6,11 @@ export const siteConfig = {
   metaDescription:
     "Turn one product photo or ASIN into 15 listing images, A+ content, and optimized bullet points. Edit everything like Canva.",
   founder: {
-    name: "Bhalani Rudra Sandipbhai",
+    name: "BHALANI RUDRA SANDIPBHAI",
     role: "Founder & Owner",
     tag: "17-year-old entrepreneur",
-    bio: "Rudra started Listone.ai with one goal: give every online seller, big or small, access to professional product images and listing content without expensive studios or agencies.",
+    photoUrl: "/founder.jpg",
+    bio: "Rudra started Listone.ai with one goal: give every online seller, big or small, access to professional product images, A+ content, and listing optimization without expensive studios or agencies.",
     socials: {
       linkedin: "https://linkedin.com",
       twitter: "https://x.com",
@@ -22,6 +23,7 @@ export const siteConfig = {
     { label: "How it Works", href: "#how-it-works" },
     { label: "Examples", href: "#examples" },
     { label: "Pricing", href: "#pricing" },
+    { label: "Founder", href: "#founder" },
     { label: "Resources", href: "#faq" },
     { label: "About", href: "/about" },
   ],

@@ -12,6 +12,7 @@ import { StatsSection } from "@/components/landing/StatsSection";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { FaqSection } from "@/components/landing/FaqSection";
+import { FounderSection } from "@/components/landing/FounderSection";
 import { FinalCta } from "@/components/landing/FinalCta";
 import { Footer } from "@/components/landing/Footer";
 
@@ -57,10 +58,13 @@ export default function HomePage() {
       {/* 13. FAQ Accordion */}
       <FaqSection />
 
-      {/* 14. Full-width Gradient Final CTA */}
+      {/* 14. Founder Section: BHALANI RUDRA SANDIPBHAI */}
+      <FounderSection />
+
+      {/* 15. Full-width Gradient Final CTA */}
       <FinalCta />
 
-      {/* 15. Dark Footer with About as last link */}
+      {/* 16. Dark Footer with About as last link */}
       <Footer />
     </main>
   );

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { LayerObject, GeneratedImageItem } from "@/lib/store";
+import { getRealisticShotsForProduct } from "@/lib/realistic-images";
 
 const generateImagesSchema = z.object({
   productName: z.string().min(2),
@@ -233,17 +234,20 @@ export async function POST(req: NextRequest) {
     }
 
     const inputData = parsed.data;
+    const realisticPresets = getRealisticShotsForProduct(inputData.category || inputData.productName, inputData.productCutoutUrl);
 
-    // Generate the complete 15 shots with layer graphs
-    const generatedShots: GeneratedImageItem[] = SHOT_DEFINITIONS.map((def) => {
+    // Generate the complete 15 shots with layer graphs and realistic studio photos
+    const generatedShots: GeneratedImageItem[] = SHOT_DEFINITIONS.map((def, idx) => {
       const layers = buildLayersForShot(def, inputData);
+      const presetPhoto = realisticPresets[idx] || realisticPresets[0];
+
       return {
         id: `shot-${def.shotIndex}-${Date.now()}`,
         shotIndex: def.shotIndex,
         shotType: def.shotType,
         title: def.title,
         description: def.description,
-        previewUrl: "",
+        previewUrl: presetPhoto ? presetPhoto.imageUrl : "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1200&q=85",
         status: "ready",
         layers,
       };

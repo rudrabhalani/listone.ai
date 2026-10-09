@@ -57,6 +57,8 @@ export interface ProductItem {
 
 interface AppContextType {
   credits: number;
+  isOwnerMode: boolean;
+  setIsOwnerMode: (active: boolean) => void;
   deductCredits: (amount: number) => boolean;
   addCredits: (amount: number) => void;
   projects: Project[];
@@ -75,28 +77,30 @@ interface AppContextType {
 const defaultProjects: Project[] = [
   {
     id: "proj-1",
-    name: "Lumière Vital Vitamin C Serum",
+    name: "Aura Acoustics Studio Pro Wireless Headphones",
+    brandName: "Aura Acoustics",
+    marketplace: "Amazon US (2000x2000)",
+    category: "Electronics",
+    createdAt: "2026-10-09",
+    skusCount: 1,
+  },
+  {
+    id: "proj-2",
+    name: "Lumière Vital Vitamin C Radiance Serum",
     brandName: "Lumière Botanicals",
     marketplace: "Amazon US",
     category: "Beauty & Personal Care",
     createdAt: "2026-10-08",
     skusCount: 1,
   },
-  {
-    id: "proj-2",
-    name: "Aura Acoustics ANC Headphones",
-    brandName: "Aura Tech",
-    marketplace: "Amazon Global",
-    category: "Electronics",
-    createdAt: "2026-10-06",
-    skusCount: 2,
-  },
 ];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [credits, setCredits] = useState<number>(150);
+  // Owner mode is active by default for Rudra Bhalani: unlimited free access!
+  const [isOwnerMode, setIsOwnerMode] = useState<boolean>(true);
+  const [credits, setCredits] = useState<number>(99999);
   const [projects, setProjects] = useState<Project[]>(defaultProjects);
   const [activeProject, setActiveProject] = useState<Project | null>(defaultProjects[0]);
   const [products, setProducts] = useState<ProductItem[]>([]);
@@ -106,8 +110,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load from local storage on mount
   useEffect(() => {
     try {
+      const savedOwner = localStorage.getItem("listone_owner_mode");
+      if (savedOwner !== null) {
+        setIsOwnerMode(savedOwner === "true");
+      }
+
       const savedCredits = localStorage.getItem("listone_credits");
-      if (savedCredits) setCredits(parseInt(savedCredits, 10));
+      if (savedCredits && savedOwner !== "true") {
+        setCredits(parseInt(savedCredits, 10));
+      }
 
       const savedProjects = localStorage.getItem("listone_projects");
       if (savedProjects) {
@@ -120,8 +131,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Save credits
+  const handleSetOwnerMode = (active: boolean) => {
+    setIsOwnerMode(active);
+    try {
+      localStorage.setItem("listone_owner_mode", active ? "true" : "false");
+    } catch {}
+    if (active) {
+      setCredits(99999);
+    }
+  };
+
+  // For owner perspective, it is totally free of use!
   const deductCredits = (amount: number) => {
+    if (isOwnerMode) {
+      return true; // Zero deduction for owner, unlimited free use!
+    }
     if (credits >= amount) {
       const updated = credits - amount;
       setCredits(updated);
@@ -189,6 +213,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         credits,
+        isOwnerMode,
+        setIsOwnerMode: handleSetOwnerMode,
         deductCredits,
         addCredits,
         projects,
