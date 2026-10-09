@@ -2,19 +2,21 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { Sparkles, ArrowUpRight, CheckCircle2, TrendingUp, ShieldCheck } from "lucide-react";
 
-type Category = "All" | "Electronics" | "Fashion" | "Home" | "Beauty" | "Food";
+type Category = "All" | "Footwear" | "Watches" | "Bags" | "Beauty" | "Drinkware";
 
-interface ExampleItem {
+interface ShowcaseItem {
   id: string;
   category: Category;
   title: string;
-  shotType: string;
+  subtitle: string;
   marketplace: string;
-  icon: string;
-  bgGradient: string;
-  highlights: string[];
+  imageUrl: string;
+  metricLabel: string;
+  metricValue: string;
+  tags: string[];
 }
 
 export const ExamplesGallery: React.FC = () => {
@@ -22,94 +24,101 @@ export const ExamplesGallery: React.FC = () => {
 
   const categories: Category[] = [
     "All",
-    "Electronics",
-    "Fashion",
-    "Home",
+    "Footwear",
+    "Watches",
+    "Bags",
     "Beauty",
-    "Food",
+    "Drinkware",
   ];
 
-  const examples: ExampleItem[] = [
+  const showcaseItems: ShowcaseItem[] = [
     {
-      id: "ex-1",
-      category: "Electronics",
-      title: "ANC Wireless Headphones Over-Ear",
-      shotType: "Infographic: Acoustic Architecture",
+      id: "sh-1",
+      category: "Footwear",
+      title: "CloudPace Pro Cushion Running Sneakers",
+      subtitle: "Pure-white studio hero + in-action track perspective",
       marketplace: "Amazon 2000x2000",
-      icon: "🎧",
-      bgGradient: "from-indigo-900/60 to-purple-950/60",
-      highlights: ["40mm Graphene Drivers", "Hi-Res Audio Certified", "45ms Low Latency"],
+      imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "Click-Through Rate",
+      metricValue: "+48% CTR",
+      tags: ["RGB(255,255,255)", "In-Use Track", "15 Shots"],
     },
     {
-      id: "ex-2",
-      category: "Beauty",
-      title: "Botanical Vitamin C Radiance Serum",
-      shotType: "Lifestyle & Ingredient Breakdown",
+      id: "sh-2",
+      category: "Watches",
+      title: "Apex Chronograph Sapphire Automatic Watch",
+      subtitle: "Macro texture dial + illuminated pedestal showcase",
       marketplace: "Amazon & Shopify",
-      icon: "🧴",
-      bgGradient: "from-pink-950/60 to-purple-900/60",
-      highlights: ["Pure Kakadu Plum 20%", "Cruelty Free Verified", "Cold-Pressed Seed Oils"],
+      imageUrl: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "Listing Conversion",
+      metricValue: "+41% Conv",
+      tags: ["Macro Sapphire", "Studio Pedestal", "Unboxing"],
     },
     {
-      id: "ex-3",
-      category: "Home",
-      title: "Ergonomic Cervical Contour Pillow",
-      shotType: "Dimensions & Spine Alignment",
-      marketplace: "Amazon A+",
-      icon: "🛏️",
-      bgGradient: "from-cyan-950/60 to-blue-950/60",
-      highlights: ["Zero-Pressure Memory Foam", "Oeko-Tex Cover", "Side & Back Sleeper"],
+      id: "sh-3",
+      category: "Bags",
+      title: "NomadShield Waterproof Commuter Backpack",
+      subtitle: "Ergonomic transit scene + unboxing layout",
+      marketplace: "Amazon A+ & Shopify",
+      imageUrl: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "Add-to-Cart Rate",
+      metricValue: "+36% Cart",
+      tags: ["Weatherproof", "Laptop Sleeve", "Dimensions"],
     },
     {
-      id: "ex-4",
-      category: "Food",
-      title: "Organic Ceremonial Grade Matcha",
-      shotType: "Origin & Preparation Steps",
-      marketplace: "Flipkart & Amazon",
-      icon: "🍵",
-      bgGradient: "from-emerald-950/60 to-teal-900/60",
-      highlights: ["First Harvest Uji, Japan", "L-Theanine Energy", "Stone Ground Powder"],
-    },
-    {
-      id: "ex-5",
-      category: "Fashion",
-      title: "Waterproof Minimalist Commuter Pack",
-      shotType: "What's In The Box / Capacity",
-      marketplace: "Shopify & Meesho",
-      icon: "🎒",
-      bgGradient: "from-slate-900 to-indigo-950/60",
-      highlights: ["16-Inch Padded Sleeve", "YKK Aquaguard Zips", "Recycled Cordura"],
-    },
-    {
-      id: "ex-6",
+      id: "sh-4",
       category: "Beauty",
-      title: "Rose Quartz Ultrasonic Facial Sculptor",
-      shotType: "Comparison vs Traditional Rollers",
-      marketplace: "Amazon Prime",
-      icon: "✨",
-      bgGradient: "from-rose-950/60 to-purple-900/60",
-      highlights: ["12,000 VPM Micro-Vibrations", "Natural Grade-A Quartz", "USB-C Rechargeable"],
+      title: "Pure Botanics Radiance Vitamin C Serum",
+      subtitle: "Morning vanity sunlight + clean botanical aesthetic",
+      marketplace: "Flipkart & Amazon",
+      imageUrl: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "Sales Velocity",
+      metricValue: "+54% Sales",
+      tags: ["Clean Beauty", "Dropper Detail", "Safe Zone"],
+    },
+    {
+      id: "sh-5",
+      category: "Drinkware",
+      title: "HydroFlow 32oz Insulated Stainless Tumbler",
+      subtitle: "Pure-white isolation + tabletop desk lifestyle",
+      marketplace: "Amazon Choice",
+      imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "ROAS Multiplier",
+      metricValue: "+3.8x ROAS",
+      tags: ["Cold 24hr", "Leakproof Lid", "Desk Scale"],
+    },
+    {
+      id: "sh-6",
+      category: "Footwear",
+      title: "VaporLite Carbon Fiber Trail Running Shoes",
+      subtitle: "High-contrast dynamic angle + macro sole tread",
+      marketplace: "Shopify & Amazon",
+      imageUrl: "https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?auto=format&fit=crop&w=1200&q=85",
+      metricLabel: "Product Engagement",
+      metricValue: "+62% Views",
+      tags: ["Carbon Plate", "Trail Grip", "Amazon Prime"],
     },
   ];
 
   const filtered =
     activeTab === "All"
-      ? examples
-      : examples.filter((item) => item.category === activeTab);
+      ? showcaseItems
+      : showcaseItems.filter((item) => item.category === activeTab);
 
   return (
     <section id="examples" className="py-24 bg-[#0B0B14] relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-wider text-brand-violet bg-brand-violet/10 border border-brand-violet/20 px-3 py-1 rounded-full">
-            Real Output Quality
-          </span>
-          <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
-            Generated by Listone.ai for Top Sellers
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-violet/10 border border-brand-violet/20 text-xs font-semibold text-brand-pink mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Studio-Grade Output Quality</span>
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-tight">
+            Real Listing Transformations That Convert
           </h2>
           <p className="mt-4 text-base sm:text-lg text-slate-300">
-            Browse real listing compositions generated from single product photographs across diverse categories.
+            See how Listone.ai transforms raw product photos into high-converting Amazon & Shopify listing photography in seconds.
           </p>
         </div>
 
@@ -130,62 +139,73 @@ export const ExamplesGallery: React.FC = () => {
           ))}
         </div>
 
-        {/* Gallery Grid */}
+        {/* Photorealistic Showcase Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map((item) => (
             <div
               key={item.id}
               className="group rounded-3xl overflow-hidden bg-[#121223] border border-white/10 hover:border-brand-violet/50 shadow-xl transition-all duration-300 hover:-translate-y-2 flex flex-col justify-between"
             >
-              {/* Product Visual Mockup */}
-              <div
-                className={`relative h-64 bg-gradient-to-br ${item.bgGradient} p-6 flex flex-col justify-between overflow-hidden border-b border-white/5`}
-              >
-                <div className="flex items-center justify-between z-10">
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-black/50 text-white backdrop-blur-md border border-white/10">
-                    {item.shotType}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-300 bg-white/10 px-2 py-0.5 rounded">
-                    {item.marketplace}
-                  </span>
+              {/* Photorealistic Image Showcase */}
+              <div className="relative aspect-[4/3] bg-[#090A12] overflow-hidden">
+                <Image
+                  src={item.imageUrl}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+
+                {/* Metric pill */}
+                <div className="absolute top-3 right-3 z-10 bg-emerald-500/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg backdrop-blur-md flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  <span>{item.metricValue}</span>
                 </div>
 
-                {/* Central Icon Asset */}
-                <div className="my-auto mx-auto transform group-hover:scale-110 transition-transform duration-300 text-6xl drop-shadow-2xl">
-                  {item.icon}
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 z-10">
-                  {item.highlights.map((h, i) => (
-                    <span
-                      key={i}
-                      className="text-[10px] font-semibold text-slate-200 bg-black/40 px-2 py-0.5 rounded backdrop-blur-sm"
-                    >
-                      ✓ {h}
-                    </span>
-                  ))}
+                {/* Marketplace pill */}
+                <div className="absolute top-3 left-3 z-10 bg-black/60 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full border border-white/15 backdrop-blur-md">
+                  {item.marketplace}
                 </div>
               </div>
 
               {/* Card Meta Content */}
-              <div className="p-6">
-                <span className="text-[11px] font-bold text-brand-pink uppercase tracking-wider">
-                  {item.category}
-                </span>
-                <h4 className="mt-1 text-base font-bold text-white group-hover:text-pink-100 transition-colors">
+              <div className="p-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-brand-pink uppercase tracking-wider">
+                    {item.category}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-mono">15 Shots Ready</span>
+                </div>
+
+                <h4 className="text-base font-bold text-white group-hover:text-pink-100 transition-colors">
                   {item.title}
                 </h4>
 
-                <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+                <p className="text-xs text-slate-400 line-clamp-2">
+                  {item.subtitle}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {item.tags.map((tag, i) => (
+                    <span
+                      key={i}
+                      className="text-[10px] font-semibold text-slate-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded-md"
+                    >
+                      ✓ {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
                   <span className="text-xs text-slate-400 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    Layered Canvas File
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    Amazon Compliance Verified
                   </span>
                   <Link
-                    href={`/dashboard/image-studio`}
+                    href="/dashboard/image-studio"
                     className="inline-flex items-center gap-1 text-xs font-bold text-brand-pink hover:text-white transition-colors"
                   >
-                    <span>Test In Studio</span>
+                    <span>Try In Studio</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
